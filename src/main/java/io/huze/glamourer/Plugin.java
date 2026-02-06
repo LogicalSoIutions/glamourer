@@ -1,0 +1,126 @@
+package io.huze.glamourer;
+
+import com.google.inject.Provides;
+import io.huze.glamourer.glam.Glamourer;
+import io.huze.glamourer.item.DedupeItemManager;
+import io.huze.glamourer.item.ItemSheet;
+import io.huze.glamourer.plate.PlateManager;
+import io.huze.glamourer.ui.MainPanel;
+import javax.inject.Inject;
+import javax.swing.SwingUtilities;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.events.PostItemComposition;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
+
+@Slf4j
+@PluginDescriptor(
+	name = "Glamourer"
+)
+public class Plugin extends net.runelite.client.plugins.Plugin
+{
+	@Inject
+	Client client;
+	@Inject
+	ClientThread clientThread;
+	@Inject
+	Config config;
+	@Inject
+	ClientToolbar clientToolbar;
+	@Inject
+	ItemSheet itemSheet;
+	@Inject
+	DedupeItemManager ddItemManager;
+	@Inject
+	Glamourer glamourer;
+	@Inject
+	PlateManager plateManager;
+
+	NavigationButton navButton;
+	MainPanel panel;
+
+	@Override
+	protected void startUp()
+	{
+		clientThread.invokeLater(() -> {
+			if (client.getGameState().getState() < GameState.LOGIN_SCREEN.getState())
+			{
+				return false;
+			}
+			if (!itemSheet.isLoaded())
+			{
+				return false;
+			}
+
+			ddItemManager.initializeOnClientThread();
+			plateManager.loadPlates();
+			plateManager.applyAllPlates();
+
+			panel = injector.getInstance(MainPanel.class);
+			setUpNavBar();
+			return true;
+		});
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (event.getGroup().equals(Config.GROUP))
+		{
+			var key = event.getKey();
+			if (key.equals(Config.KEY_NAV_PRIORITY))
+			{
+				setUpNavBar();
+			}
+			else if (key.equals(Config.KEY_ICON_SCALE))
+			{
+				SwingUtilities.invokeLater(() -> panel.onIconScaleChanged());
+			}
+		}
+	}
+
+	private void setUpNavBar()
+	{
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+		}
+		navButton = NavigationButton.builder()
+			.tooltip("Glamourer")
+			.icon(ImageUtil.loadImageResource(getClass(), "nav_icon.png"))
+			.priority(config.navPriority())
+			.panel(panel)
+			.build();
+		clientToolbar.addNavigation(navButton);
+	}
+
+	@Override
+	protected void shutDown()
+	{
+		clientThread.invokeLater(() -> {
+			plateManager.revertAllPlates();
+			glamourer.revertAll();
+		});
+		clientToolbar.removeNavigation(navButton);
+	}
+
+	@Subscribe(priority = Float.MAX_VALUE)
+	public void onPostItemComposition(PostItemComposition event)
+	{
+		glamourer.onPostItemComposition(event);
+	}
+
+	@Provides
+	Config provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(Config.class);
+	}
+}
