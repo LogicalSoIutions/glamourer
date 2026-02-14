@@ -21,7 +21,7 @@ item composition at a deeper level which changes items in your inventory, equipm
 
 ## Examples
 
-![dragon_zombie_axec](https://github.com/user-attachments/assets/6f13bd7b-d4b5-4353-9e21-60f6e1bae023)
+![dragon_zombie_axec](https://raw.githubusercontent.com/jhughes/glamourer/master/readme_assets/dragon_zombie_axe.gif)
 
 ## Contributing
 
