@@ -97,6 +97,33 @@ public class PlateManager
 		notifyPlatesChanged();
 	}
 
+	public String exportPlateToJson(Plate plate)
+	{
+		PlateData data = plate.getData();
+		return gson.toJson(data);
+	}
+
+	public Plate importPlateFromJson(String json)
+	{
+		PlateData data = gson.fromJson(json, PlateData.class);
+		if (data == null)
+		{
+			throw new IllegalArgumentException("Invalid plate data");
+		}
+		// Assign a new ID so imported plates don't collide with existing ones
+		data.setId(java.util.UUID.randomUUID().toString());
+		Plate plate = Plate.fromData(data, glamourer);
+		plate.setOnChange(this::savePlates);
+		plates.add(plate);
+		if (plate.isEnabled())
+		{
+			plate.applyAll(glamourer);
+		}
+		savePlates();
+		notifyPlatesChanged();
+		return plate;
+	}
+
 	public void deletePlate(String id)
 	{
 		plates.stream()

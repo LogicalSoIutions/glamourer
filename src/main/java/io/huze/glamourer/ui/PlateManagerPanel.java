@@ -9,8 +9,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
@@ -59,6 +62,12 @@ public class PlateManagerPanel extends JPanel
 
 		JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 		rightPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+		JButton importPlateButton = new JButton();
+		ImageIcons.setImportIcon(importPlateButton);
+		importPlateButton.setToolTipText("Import plate from clipboard");
+		importPlateButton.addActionListener(e -> importPlateFromClipboard());
+		rightPanel.add(importPlateButton);
 
 		JButton createPlateButton = new JButton();
 		ImageIcons.setCreateIcon(createPlateButton);
@@ -110,6 +119,7 @@ public class PlateManagerPanel extends JPanel
 				plate, glamourer, clientThread,
 				config.iconScale() / 100f, onAddItemRequest,
 				p -> clientThread.invokeLater(() -> plateManager.deletePlate(p.getId())),
+				this::exportPlateToClipboard,
 				() -> {
 					updateExpandCollapseButton();
 					revalidate();
@@ -184,6 +194,65 @@ public class PlateManagerPanel extends JPanel
 			}
 		}
 		updateExpandCollapseButton();
+	}
+
+	private void importPlateFromClipboard()
+	{
+		String json = JOptionPane.showInputDialog(
+			SwingUtilities.windowForComponent(this),
+			"Paste exported plate JSON:",
+			"Import Plate",
+			JOptionPane.PLAIN_MESSAGE
+		);
+		if (json == null || json.trim().isEmpty())
+		{
+			return;
+		}
+		clientThread.invokeLater(() -> {
+			try
+			{
+				plateManager.importPlateFromJson(json.trim());
+				SwingUtilities.invokeLater(() -> {
+					rebuildPlatesSection();
+					JScrollBar vertical = scrollPane.getVerticalScrollBar();
+					vertical.setValue(vertical.getMaximum());
+				});
+			}
+			catch (Exception ex)
+			{
+				SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
+					SwingUtilities.windowForComponent(this),
+					"Invalid plate data.",
+					"Import Failed",
+					JOptionPane.ERROR_MESSAGE
+				));
+			}
+		});
+	}
+
+	private void exportPlateToClipboard(Plate plate)
+	{
+		try
+		{
+			String json = plateManager.exportPlateToJson(plate);
+			StringSelection selection = new StringSelection(json);
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+			JOptionPane.showMessageDialog(
+				SwingUtilities.windowForComponent(this),
+				"Plate \"" + plate.getName() + "\" exported to clipboard.",
+				"Export Successful",
+				JOptionPane.INFORMATION_MESSAGE
+			);
+		}
+		catch (Exception e)
+		{
+			JOptionPane.showMessageDialog(
+				SwingUtilities.windowForComponent(this),
+				"Failed to export plate: " + e.getMessage(),
+				"Export Failed",
+				JOptionPane.ERROR_MESSAGE
+			);
+		}
 	}
 
 	private void handleItemMove(Plate sourcePlate, int sourceIndex, Plate targetPlate, int targetIndex)

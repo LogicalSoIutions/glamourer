@@ -27,6 +27,7 @@ public class ImageIcons
 	private static final ImageIcon RESET_ICON = loadImageIcon("reset.png");
 	private static final ImageIcon RESET_ICON_DARK = invertImageIcon(RESET_ICON);
 	private static final ImageIcon BIN_ICON = loadImageIcon("bin.png");
+	private static final ImageIcon IMPORT_ICON = loadImageIcon("import.png");
 
 	private static final ImageIcon EXPAND_ICON_HOVERED = brightenImageIcon(EXPAND_ICON);
 	private static final ImageIcon COLLAPSE_ICON_HOVERED = brightenImageIcon(COLLAPSE_ICON);
@@ -39,6 +40,7 @@ public class ImageIcons
 	private static final ImageIcon RESET_ICON_HOVERED = brightenImageIcon(RESET_ICON);
 	private static final ImageIcon RESET_ICON_DARK_HOVERED = brightenImageIcon(RESET_ICON_DARK);
 	private static final ImageIcon BIN_ICON_HOVERED = brightenImageIcon(BIN_ICON);
+	private static final ImageIcon IMPORT_ICON_HOVERED = brightenImageIcon(IMPORT_ICON);
 
 	public static final ImageIcon ON_SWITCHER;
 	public static final ImageIcon OFF_SWITCHER;
@@ -113,6 +115,13 @@ public class ImageIcons
 		button.setRolloverIcon(BIN_ICON_HOVERED);
 	}
 
+	public static void setImportIcon(JButton button)
+	{
+		configureIconButton(button);
+		button.setIcon(IMPORT_ICON);
+		button.setRolloverIcon(IMPORT_ICON_HOVERED);
+	}
+
 	public static void setResetIcon(JButton button, Color backgroundColor)
 	{
 		configureIconButton(button);
@@ -123,6 +132,10 @@ public class ImageIcons
 
 	public static void setScaledIcon(JLabel label, BufferedImage image, float iconScale)
 	{
+		if (image == null)
+		{
+			return;
+		}
 		int w = (int) (image.getWidth() * iconScale);
 		int h = (int) (image.getHeight() * iconScale);
 		var dimension = new Dimension(w, h);

@@ -65,7 +65,8 @@ public class PlateRowPanel extends JPanel
 
 	public PlateRowPanel(Plate plate, Glamourer glamourer, ClientThread clientThread,
 						 float iconScale, Consumer<Plate> onAddItemRequest,
-						 Consumer<Plate> onDeleteRequest, Runnable onExpandToggle,
+						 Consumer<Plate> onDeleteRequest, Consumer<Plate> onExportRequest,
+						 Runnable onExpandToggle,
 						 ItemDragDropHandler.ItemMoveCallback onItemMoved)
 	{
 		this.plate = plate;
@@ -143,6 +144,12 @@ public class PlateRowPanel extends JPanel
 		JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
 		rightPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
+		JButton exportButton = new JButton();
+		ImageIcons.setCopyIcon(exportButton);
+		exportButton.setToolTipText("Export to clipboard");
+		exportButton.addActionListener(e -> onExportRequest.accept(plate));
+		rightPanel.add(exportButton);
+
 		JButton editButton = new JButton();
 		ImageIcons.setEditIcon(editButton);
 		editButton.setToolTipText("Rename");
@@ -159,6 +166,10 @@ public class PlateRowPanel extends JPanel
 		headerPanel.add(rightPanel, BorderLayout.EAST);
 
 		JPopupMenu popupMenu = new JPopupMenu();
+		JMenuItem exportItem = new JMenuItem("Export");
+		exportItem.addActionListener(e -> onExportRequest.accept(plate));
+		popupMenu.add(exportItem);
+
 		JMenuItem deleteItem = new JMenuItem("Delete");
 		deleteItem.addActionListener(e -> {
 			if (plate.getGlamours().isEmpty())
